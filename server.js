@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path';
 import mongoose from 'mongoose';
 import seedRouter from './routes/seedRoutes.js';
 import productRouter from './routes/productRoutes.js';
@@ -7,7 +8,6 @@ import orderRouter from './routes/orderRoutes.js';
 import uploadRouter from './routes/uploadRoutes.js';
 import sliderRouter from './routes/sliderRouter.js';
 import dotenv from 'dotenv';
-const path = require('path');
 dotenv.config();
 mongoose
   .connect(process.env.MONGODB_URI)

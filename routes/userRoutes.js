@@ -13,7 +13,7 @@ userRouter.get(
   isAuth,
   isAdmin,
   expressAsyncHandler(async (req, res) => {
-    const users = await User.find({ isAdmin: "false" });
+    const users = await User.find({ isAdmin: 'false' });
     res.send(users);
   })
 );
@@ -39,14 +39,13 @@ userRouter.put(
     const user = await User.findById(req.user._id);
     if (user) {
       if (bcrypt.compareSync(req.body.oldPassword, user.password)) {
-  
         user.name = req.body.name || user.name;
         user.email = req.body.email || user.email;
         if (req.body.password) {
           user.password = bcrypt.hashSync(req.body.password, 8);
         }
         user.phone = req.body.phone || user.phone;
-  
+
         const updatedUser = await user.save();
         res.send({
           _id: updatedUser._id,
@@ -56,9 +55,8 @@ userRouter.put(
           isAdmin: updatedUser.isAdmin,
           token: generateToken(updatedUser),
         });
-      }
-      else {
-          res.status(404).send({ message: 'Invalid Password' });
+      } else {
+        res.status(404).send({ message: 'Invalid Password' });
       }
     } else {
       res.status(404).send({ message: 'User not found' });
@@ -85,23 +83,24 @@ userRouter.put(
   })
 );
 
+userRouter.patch(
+  '/updateUserStatus',
+  isAuth,
+  isAdmin,
+  expressAsyncHandler(async (req, res) => {
+    let { userID, status } = req.body;
+    let user = await User.findByIdAndUpdate(
+      { _id: userID },
+      {
+        isActive: !status,
+      }
+    );
 
-
-
-userRouter.patch('/updateUserStatus',  isAuth,isAdmin, expressAsyncHandler(async  (req, res) => {
-  
-  let { userID, status } = req.body
-  let user = await User.findByIdAndUpdate({ _id: userID }, {
-    isActive:!status
+    if (user) {
+      res.send({ message: 'Status Updated', status: user.isActive });
+    }
   })
-
-  if (user) {
-    res.send({message:"Status Updated",status:user.isActive})
-  }
-  
-
-}) )
-
+);
 
 userRouter.put(
   '/reset-password',
@@ -145,16 +144,19 @@ userRouter.post(
     const user = await User.findOne({ email: req.body.email });
     if (user) {
       if (!user.isActive) {
-        console.log("In Active")
-         res.status(401).send({ message: 'Your account has been blocked' });
-        return
-}
+        console.log('In Active');
+        res.status(401).send({ message: 'Your account has been blocked' });
+        return;
+      }
       if (bcrypt.compareSync(req.body.password, user.password)) {
         res.send({
           _id: user._id,
           name: user.name,
           email: user.email,
-          phone: user.phone,
+          phoneNo: user.phoneNo,
+          whatsapp: user.whatsapp,
+          telegram: user.telegram,
+          iMessage: user.iMessage,
           isAdmin: user.isAdmin,
           token: generateToken(user),
         });
@@ -171,15 +173,23 @@ userRouter.post(
     const newUser = new User({
       name: req.body.name,
       email: req.body.email,
-      phone: req.body.phone,
+      phoneNo: req.body.phoneNo,
       password: bcrypt.hashSync(req.body.password),
+      whatsapp: req.body.whatsapp,
+      telegram: req.body.telegram,
+      imessage: req.body.imessage,
     });
+    // console.log('in side the signup:::', newUser);
     const user = await newUser.save();
     res.send({
       _id: user._id,
       name: user.name,
       email: user.email,
-      phone: user.phone,
+      phoneNo: user.phoneNo,
+      whatsapp: user.whatsapp,
+      telegram: user.telegram,
+      imessage: user.imessage,
+      userRegistered: user.userRegistered,
       isAdmin: user.isAdmin,
       token: generateToken(user),
     });
@@ -193,21 +203,16 @@ userRouter.post(
     // console.log(data);
     const responseType = {};
     if (data) {
-
-
-
-    const isOtp = await Otp.find({
-      email: req.body.email,
-    });
+      const isOtp = await Otp.find({
+        email: req.body.email,
+      });
       if (isOtp) {
-          let oldOtp=await    Otp.findOneAndDelete(
-              {email: req.body.email})
+        let oldOtp = await Otp.findOneAndDelete({ email: req.body.email });
       }
-
 
       let otpCode = Math.floor(Math.random() * 10000 + 1);
 
-const VALID_DURATION= 120000
+      const VALID_DURATION = 120000;
       let otpData = new Otp({
         email: req.body.email,
         code: otpCode,
@@ -215,17 +220,15 @@ const VALID_DURATION= 120000
       });
 
       // send otm email notification
-      passwordResetMail({TO:req.body.email,OTP:otpCode})
+      passwordResetMail({ TO: req.body.email, OTP: otpCode });
 
       let otpRespond = await otpData.save();
       responseType.statusText = 'Success';
       responseType.message = 'Please check your email id';
 
       setTimeout(async () => {
-   let oldOtp=await  Otp.findOneAndDelete(
-              {email: req.body.email})
-},VALID_DURATION)
-
+        let oldOtp = await Otp.findOneAndDelete({ email: req.body.email });
+      }, VALID_DURATION);
     } else {
       responseType.statusText = 'error';
       responseType.message = 'Email Id not Exist';
@@ -244,42 +247,40 @@ userRouter.post(
 
     const response = {};
     if (existingOTP.length === 0) {
-        response.message = 'Token Expire';
+      response.message = 'Token Expire';
       res.statusText = 'error';
-     
-      
-    }
-    else {
-      
-      if (existingOTP.length>0) {
-        let currentTime = new Date().getTime();
-      let diff = new Date(existingOTP[0].expiredAt).getTime() - currentTime;
-      if (diff < 0) {
-    // let oldOtp=await    Otp.findOneAndDelete(
-    //   { email: req.body.email })
-        response.message = 'Token Expire';
-        res.statusText = 'error';
-      } else {
-        let user = await User.findOne({ email: req.body.email });
-        user.password = req.body.password;
-        user.save();
-        if (user) {
-          let oldOtp=await    Otp.findOneAndDelete(
-      { email: req.body.email })
-        }
-
-        let updatePassword = await User.findOneAndUpdate({ email: req.body.email }, {
-          password: bcrypt.hashSync(req.body.password),
-        })
-        console.log(updatePassword)
-        response.message = 'Password changed successfully';
-        response.statusText = 'Success';
-      }
     } else {
-      response.message = 'Invalid otp';
-      response.statusText = 'error';
+      if (existingOTP.length > 0) {
+        let currentTime = new Date().getTime();
+        let diff = new Date(existingOTP[0].expiredAt).getTime() - currentTime;
+        if (diff < 0) {
+          // let oldOtp=await    Otp.findOneAndDelete(
+          //   { email: req.body.email })
+          response.message = 'Token Expire';
+          res.statusText = 'error';
+        } else {
+          let user = await User.findOne({ email: req.body.email });
+          user.password = req.body.password;
+          user.save();
+          if (user) {
+            let oldOtp = await Otp.findOneAndDelete({ email: req.body.email });
+          }
+
+          let updatePassword = await User.findOneAndUpdate(
+            { email: req.body.email },
+            {
+              password: bcrypt.hashSync(req.body.password),
+            }
+          );
+          console.log(updatePassword);
+          response.message = 'Password changed successfully';
+          response.statusText = 'Success';
+        }
+      } else {
+        response.message = 'Invalid otp';
+        response.statusText = 'error';
+      }
     }
-  }
     res.status(200).json(response);
   })
 );

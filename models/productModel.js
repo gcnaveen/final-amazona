@@ -19,7 +19,11 @@ const productSchema = new mongoose.Schema(
     images: [String],
     brand: { type: String, required: true },
     category: { type: String, required: true },
-    categoryID: { type: mongoose.Types.ObjectId, required: true , ref:'Category',},
+    categoryID: {
+      type: mongoose.Types.ObjectId,
+      required: true,
+      ref: 'Category',
+    },
     subCategory: { type: String },
     description: { type: String, required: true },
     price: { type: Number, required: true },
@@ -28,6 +32,7 @@ const productSchema = new mongoose.Schema(
     rating: { type: Number, required: true },
     numReviews: { type: Number, required: true },
     reviews: [reviewSchema],
+    blackFridaySale: { type: Boolean, default: false },
   },
   {
     timestamps: true,

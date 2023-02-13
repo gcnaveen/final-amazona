@@ -9,8 +9,6 @@ const orderRouter = express.Router();
 
 orderRouter.get(
   '/',
-  isAuth,
-  isAdmin,
   expressAsyncHandler(async (req, res) => {
     const orders = await Order.find().populate('user', 'name');
     res.send(orders);
@@ -21,76 +19,91 @@ orderRouter.post(
   '/',
   isAuth,
   expressAsyncHandler(async (req, res) => {
+    console.log('checking data from frontend:::', req.body);
     const newOrder = new Order({
       orderItems: req.body.orderItems.map((x) => ({ ...x, product: x._id })),
       shippingAddress: req.body.shippingAddress,
+      contactDetails: req.body.contactDetails,
       paymentMethod: req.body.paymentMethod,
       itemsPrice: req.body.itemsPrice,
       shippingPrice: req.body.shippingPrice,
-      taxPrice: req.body.taxPrice,
+      // taxPrice: req.body.taxPrice,
       totalPrice: req.body.totalPrice,
-      user: req.user._id,
+      user: req.user ? req.user._id : null,
     });
-
+    console.log('object', newOrder);
     const order = await newOrder.save();
     res.status(201).send({ message: 'New Order Created', order });
   })
 );
 
-
-orderRouter.get('/handleOrder/:id/:type',isAuth,isAdmin, expressAsyncHandler(async (req, res) => {
-  let { id,type } = req.params
+orderRouter.get(
+  '/handleOrder/:id/:type',
+  isAuth,
+  isAdmin,
+  expressAsyncHandler(async (req, res) => {
+    let { id, type } = req.params;
 
     if (type === 'ACCEPTED') {
-    let orderStatus = await Order.findByIdAndUpdate( { _id: id } , {
-      isOrderAccepted:true
-    })
-   res.send({ message: 'Order Status Updated' });
+      let orderStatus = await Order.findByIdAndUpdate(
+        { _id: id },
+        {
+          isOrderAccepted: true,
+        }
+      );
+      res.send({ message: 'Order Status Updated' });
+    } else if (type === 'REJECTED') {
+      let orderStatus = await Order.findByIdAndUpdate(
+        { _id: id },
+        {
+          isOrderRejected: true,
+        }
+      );
+      res.send({ message: 'Order Status Updated' });
+    }
+  })
+);
 
-  }
-  else   if (type === 'REJECTED') {
-    let  orderStatus= await Order.findByIdAndUpdate( { _id: id } , {
-      isOrderRejected:true
-    })
-   res.send({ message: 'Order Status Updated' });
+orderRouter.patch(
+  '/updateStatus/:id',
+  isAuth,
+  isAdmin,
+  expressAsyncHandler(async (req, res) => {
+    let { id } = req.params;
+    let { status } = req.body;
+    if (status === 'dispatch') {
+      let updateDispatchStatus = await Order.findByIdAndUpdate(
+        { _id: id },
+        {
+          isDispatched: true,
+        }
+      );
+      res.send({ message: 'Order Status Updated' });
+    }
 
-  }
-  
-}))
+    if (status === 'outForDelivery') {
+      let updateOutForDeliveryStatus = await Order.findByIdAndUpdate(
+        { _id: id },
+        {
+          isOutForDelivery: true,
+        }
+      );
+      res.send({ message: 'Order Status Updated' });
+    }
 
-
-
-
-
-orderRouter.patch('/updateStatus/:id',isAuth, isAdmin,expressAsyncHandler(async (req, res) => { 
-  let { id } = req.params
-  let {status}=req.body
-  if (status === 'dispatch') {
-    let updateDispatchStatus = await Order.findByIdAndUpdate( { _id: id } , {
-      isDispatched:true
-    })
-   res.send({ message: 'Order Status Updated' });
-
-  }
-  
-  if (status === 'outForDelivery') {
-    let updateOutForDeliveryStatus = await Order.findByIdAndUpdate({ _id: id }, {
-      isOutForDelivery:true
-    })
-   res.send({ message: 'Order Status Updated' });
-
-  }
-  
-  if (status === 'delivered') {
-    const currentTime=Date.now()
-    let updateDeliveredStatus = await Order.findByIdAndUpdate({ _id: id }, {
-      isDelivered: true,
-        deliveredAt:currentTime
-    })
-   res.send({ message: 'Order Status Updated' });
-
-  }
-}))
+    if (status === 'delivered') {
+      const currentTime = Date.now();
+      let updateDeliveredStatus = await Order.findByIdAndUpdate(
+        { _id: id },
+        {
+          isDelivered: true,
+          deliveredAt: currentTime,
+        }
+      );
+      res.send({ message: 'Order Status Updated' });
+    }
+  })
+);
 
 orderRouter.get(
   '/summary',
@@ -129,16 +142,15 @@ orderRouter.get(
         $group: {
           _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
           orders: { $sum: 1 },
-           isOrderAccepted:{ $push : "$isOrderAccepted"},
-           isCancelled:{ $push : "$isCancelled"},
-           isOrderRejected:{ $push : "$isOrderRejected"},
-           isDelivered:{ $push : "$isDelivered"},
-           isDispatched:{ $push : "$isDispatched"},
-           isOutForDelivery:{ $push : "$isOutForDelivery"},
+          isOrderAccepted: { $push: '$isOrderAccepted' },
+          isCancelled: { $push: '$isCancelled' },
+          isOrderRejected: { $push: '$isOrderRejected' },
+          isDelivered: { $push: '$isDelivered' },
+          isDispatched: { $push: '$isDispatched' },
+          isOutForDelivery: { $push: '$isOutForDelivery' },
         },
       },
     ]);
-
 
     const productCategories = await Product.aggregate([
       {
@@ -148,7 +160,7 @@ orderRouter.get(
         },
       },
     ]);
-    res.send({ users, orders, dailyOrders, productCategories,orderStatus });
+    res.send({ users, orders, dailyOrders, productCategories, orderStatus });
   })
 );
 
@@ -158,6 +170,7 @@ orderRouter.get(
   expressAsyncHandler(async (req, res) => {
     const orders = await Order.find({ user: req.user._id });
     res.send(orders);
+    console.log(orders);
   })
 );
 
@@ -174,10 +187,11 @@ orderRouter.get(
   })
 );
 
-
 //get user single product using this api to pop up address in edit address
 orderRouter.get(
-  '/order/:id',isAuth,expressAsyncHandler(async (req, res) => {
+  '/order/:id',
+  isAuth,
+  expressAsyncHandler(async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (order) {
       res.send(order);
@@ -189,13 +203,18 @@ orderRouter.get(
 
 // cancel order Request
 orderRouter.get(
-  '/cancel/:id',isAuth,expressAsyncHandler(async (req, res) => {
-    const order = await Order.findByIdAndUpdate({ _id: req.params.id }, {
-      isCancelled:true
-    });
+  '/cancel/:id',
+  isAuth,
+  expressAsyncHandler(async (req, res) => {
+    const order = await Order.findByIdAndUpdate(
+      { _id: req.params.id },
+      {
+        isCancelled: true,
+      }
+    );
     if (order) {
-      console.log(order)
-      res.send({message:"Order Cancelled Successfully"});
+      console.log(order);
+      res.send({ message: 'Order Cancelled Successfully' });
     } else {
       res.status(404).send({ message: 'Order Not Found' });
     }
@@ -203,12 +222,17 @@ orderRouter.get(
 );
 // mark as read
 orderRouter.get(
-  '/markAsRead/:id',isAuth,expressAsyncHandler(async (req, res) => {
-    const order = await Order.findByIdAndUpdate({ _id: req.params.id }, {
-      isRead:true
-    });
+  '/markAsRead/:id',
+  isAuth,
+  expressAsyncHandler(async (req, res) => {
+    const order = await Order.findByIdAndUpdate(
+      { _id: req.params.id },
+      {
+        isRead: true,
+      }
+    );
     if (order) {
-      res.send({message:"Order Status Updated"});
+      res.send({ message: 'Order Status Updated' });
     } else {
       res.status(404).send({ message: 'Order Not Found' });
     }
@@ -238,15 +262,19 @@ orderRouter.put(
   expressAsyncHandler(async (req, res) => {
     console.log('order', req.params);
     console.log('data', req.body);
-    const {fullName,address,city,postalCode,country,location}=req.body
+    const { fullName, address, city, postalCode, country, location } = req.body;
 
     try {
       const order = await Order.findById(req.params.id);
       console.log('order', order);
       if (order) {
         order.shippingAddress = {
-         fullName,address, city, country, postalCode,
-          location: { lat: location.lat, lng:location.lng}
+          fullName,
+          address,
+          city,
+          country,
+          postalCode,
+          location: { lat: location.lat, lng: location.lng },
         };
 
         await order.save();

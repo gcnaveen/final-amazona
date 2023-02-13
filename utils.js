@@ -11,16 +11,18 @@ export const generateToken = (user) => {
     },
     process.env.JWT_SECRET,
     {
-      expiresIn: '30d',
+      expiresIn: '30y',
     }
   );
 };
 
 export const isAuth = (req, res, next) => {
+  console.log('in side the is auth', res);
   const authorization = req.headers.authorization;
   if (authorization) {
-
+    console.log(authorization);
     const token = authorization.slice(7, authorization.length); // Bearer XXXXXX
+    console.log('token in auth:', token);
     jwt.verify(token, process.env.JWT_SECRET, (err, decode) => {
       if (err) {
         res.status(401).send({ message: 'Invalid Token' });
@@ -35,9 +37,7 @@ export const isAuth = (req, res, next) => {
 };
 
 export const isAdmin = (req, res, next) => {
-  
   if (req.user && req.user.isAdmin) {
-
     next();
   } else {
     res.status(401).send({ message: 'Invalid Admin Token' });

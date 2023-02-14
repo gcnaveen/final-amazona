@@ -33,8 +33,11 @@ const orderSchema = new mongoose.Schema(
     },
     contactDetails: {
       phoneNumber: { type: Number, unique: true },
-      whatsappNumber: { type: Number },
       email: { type: String, unique: true },
+      address: { type: String, required: true },
+      postalCode: { type: Number, required: true },
+      country: { type: String, required: true },
+      city: { type: String, required: true },
     },
     paymentMethod: { type: String },
     paymentResult: {

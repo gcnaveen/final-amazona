@@ -32,7 +32,7 @@ const productSchema = new mongoose.Schema(
     rating: { type: Number, required: true },
     numReviews: { type: Number, required: true },
     reviews: [reviewSchema],
-    blackFridaySale: { type: Boolean, default: false },
+    blackFridaySale: { type: Boolean },
   },
   {
     timestamps: true,

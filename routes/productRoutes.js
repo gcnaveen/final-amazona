@@ -159,7 +159,10 @@ productRouter.get('/', async (req, res) => {
   const products = await Product.find();
   res.send(products);
 });
-
+productRouter.get('/blackfridaysale', async (req, res) => {
+  const products = await Product.find({ blackFridaySale: true });
+  res.send(products);
+});
 productRouter.post(
   '/',
   isAuth,
@@ -177,6 +180,7 @@ productRouter.post(
       numReviews: 0,
       productDiscountedPrice: 0,
       description: 'sample description',
+      blackFridaySale: false,
     });
     const product = await newProduct.save();
     res.send({ message: 'Product Created', product });
@@ -204,6 +208,7 @@ productRouter.put(
       productDiscountedPrice,
       categoryID,
       IMAGE_STATUS,
+      blackFridaySale,
     } = req.body;
     // console.log("body",req.body)
     if (
@@ -215,7 +220,8 @@ productRouter.put(
       !price ||
       !countInStock ||
       !productDiscountedPrice ||
-      !categoryID
+      !categoryID ||
+      !blackFridaySale
     ) {
       res.status(422).send({ message: 'Insufficient Details' });
       return;
@@ -248,6 +254,7 @@ productRouter.put(
           categoryID,
           image,
           images,
+          blackFridaySale,
         }
       );
       res.status(200).send({ message: 'Product Updated' });

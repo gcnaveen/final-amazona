@@ -159,6 +159,12 @@ productRouter.get('/', async (req, res) => {
   const products = await Product.find();
   res.send(products);
 });
+
+productRouter.get('/bestseller', async (req, res) => {
+  const prods = await Product.find({ rating: { $gt: 2 } });
+  res.send(prods);
+});
+
 productRouter.get('/blackfridaysale', async (req, res) => {
   const products = await Product.find({ blackFridaySale: true });
   res.send(products);

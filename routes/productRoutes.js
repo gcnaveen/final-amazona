@@ -286,6 +286,21 @@ productRouter.delete(
   })
 );
 
+
+
+productRouter.get('/dealOfTheDay', async (req, res) =>{
+  let discountPercent = {
+    $cond: {
+      if: {$gt:[{$subtract:["$price","$productDiscountedPrice"]},0]},
+      then: {$divide:[{$multiply:["$productDiscountedPrice",100]},"$price"]},
+      else: 0
+    }
+  }
+
+  const prods = await Product.find({$expr:{$gt:[discountPercent,14]}});
+  res.send(prods);
+})
+
 productRouter.post(
   '/:id/reviews',
   isAuth,

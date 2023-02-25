@@ -6,10 +6,6 @@ import streamifier from 'streamifier';
 
 const upload = multer();
 
-
-
-
-
 export const fileUploader=  async (req, res, next) => {
   const middleware=  upload.array('file')
 
@@ -33,7 +29,6 @@ export const fileUploader=  async (req, res, next) => {
         streamifier.createReadStream(req.buffer).pipe(stream);
       });
     };
-
     var imageUrlList = [];
     
     for (var i = 0; i < req.files.length; i++) {
@@ -41,7 +36,7 @@ export const fileUploader=  async (req, res, next) => {
       const result = await streamUpload(localFile);
       imageUrlList.push(result.url);
     }
-    req.filesURL= await imageUrlList
+    req.body.filesURL= await imageUrlList
     next()
     } catch (error) {
         

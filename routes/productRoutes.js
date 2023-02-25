@@ -165,6 +165,27 @@ productRouter.get('/bestseller', async (req, res) => {
   res.send(prods);
 });
 
+productRouter.get('/dealOfTheDay', async (req, res) =>{
+  let discountPercent = {
+    $cond: {
+      if: {$gt:[{$subtract:["$price","$productDiscountedPrice"]},0]},
+      then: {$divide:[{$multiply:["$productDiscountedPrice",100]},"$price"]},
+      else: 0
+    }
+  }
+
+  const prods = await Product.find({$expr:{$gt:[discountPercent,15]}});
+  res.send(prods);
+})
+
+// productRouter.get('/dealoftheday', async (req, res) => {
+//   const prods = await Product.find({
+//     $reduce:{
+//       input:'productDiscountedPrice',initialValue:0,
+//       in:{$}
+//     productDiscountedPrice/price*100) : {$gt:'15%'}});
+// });
+
 productRouter.get('/blackfridaysale', async (req, res) => {
   const products = await Product.find({ blackFridaySale: true });
   res.send(products);
@@ -200,7 +221,7 @@ productRouter.put(
   fileUploader,
   expressAsyncHandler(async (req, res) => {
     const productId = req.params.id;
-    const files = req.filesURL;
+    const files = req.body.filesURL;
 
     const {
       name,
@@ -237,12 +258,14 @@ productRouter.put(
       let image = product.image;
       let images = product.images;
       if (IMAGE_STATUS === 'ALL_IMAGES') {
-        image = files?.splice(0, 1)[0];
+        let imageURL = files[files.length-1]
+        image = imageURL
         images = files;
       } else if (IMAGE_STATUS === 'ADDITIONAL_IMAGE') {
         images = files;
-      } else if (IMAGE_STATUS === 'ADDITIONAL_IMAGE') {
-        image = files?.splice(0, 1)[0];
+      } else if (IMAGE_STATUS === 'MAIN_IMAGE') {
+        let imageURL = files[files.length-1]
+        image =imageURL
       }
 
       let updateProduct = await Product.findByIdAndUpdate(
@@ -285,21 +308,6 @@ productRouter.delete(
     }
   })
 );
-
-
-
-productRouter.get('/dealOfTheDay', async (req, res) =>{
-  let discountPercent = {
-    $cond: {
-      if: {$gt:[{$subtract:["$price","$productDiscountedPrice"]},0]},
-      then: {$divide:[{$multiply:["$productDiscountedPrice",100]},"$price"]},
-      else: 0
-    }
-  }
-
-  const prods = await Product.find({$expr:{$gt:[discountPercent,14]}});
-  res.send(prods);
-})
 
 productRouter.post(
   '/:id/reviews',

@@ -106,6 +106,14 @@ productRouter.post(
       description,
       additionalInfo,
       price,
+      priceFor30Pills,
+      priceFor45Pills,
+      priceFor60Pills,
+      priceFor90Pills,
+      priceFor120Pills,
+      priceFor150Pills,
+      priceFor240Pills,
+      priceFor300Pills,
       countInStock,
       productDiscountedPrice,
       categoryID,
@@ -136,6 +144,14 @@ productRouter.post(
         description,
         additionalInfo,
         price,
+        priceFor30Pills,
+        priceFor45Pills,
+        priceFor60Pills,
+        priceFor90Pills,
+        priceFor120Pills,
+        priceFor150Pills,
+        priceFor240Pills,
+        priceFor300Pills,
         countInStock,
         productDiscountedPrice,
         rating,
@@ -181,13 +197,6 @@ productRouter.get('/dealOfTheDay', async (req, res) =>{
   res.send(prods);
 })
 
-// productRouter.get('/dealoftheday', async (req, res) => {
-//   const prods = await Product.find({
-//     $reduce:{
-//       input:'productDiscountedPrice',initialValue:0,
-//       in:{$}
-//     productDiscountedPrice/price*100) : {$gt:'15%'}});
-// });
 
 productRouter.get('/blackfridaysale', async (req, res) => {
   const products = await Product.find({ blackFridaySale: true });
@@ -212,6 +221,14 @@ productRouter.post(
       description: 'sample description',
       additionalInfo:'sample information', 
       blackFridaySale: false,
+      priceFor30Pills:0,
+      priceFor45Pills:0,
+      priceFor60Pills:0,
+      priceFor90Pills:0,
+      priceFor120Pills:0,
+      priceFor150Pills:0,
+      priceFor240Pills:0,
+      priceFor300Pills:0,
     });
     const product = await newProduct.save();
     res.send({ message: 'Product Created', product });
@@ -241,6 +258,14 @@ productRouter.put(
       categoryID,
       IMAGE_STATUS,
       blackFridaySale,
+      priceFor30Pills,
+      priceFor45Pills,
+      priceFor60Pills,
+      priceFor90Pills,
+      priceFor120Pills,
+      priceFor150Pills,
+      priceFor240Pills,
+      priceFor300Pills,
     } = req.body;
     // console.log("body",req.body)
     if (
@@ -290,11 +315,19 @@ productRouter.put(
           image,
           images,
           blackFridaySale,
+          priceFor30Pills,
+          priceFor45Pills,
+          priceFor60Pills,
+          priceFor90Pills,
+          priceFor120Pills,
+          priceFor150Pills,
+          priceFor240Pills,
+          priceFor300Pills,
         }
       );
       res.status(200).send({ message: 'Product Updated' });
     } catch (error) {
-      console.log(error);
+      console.log('error while updating',error);
       res.status(400).send({ message: 'Something went wrong' });
     }
   })

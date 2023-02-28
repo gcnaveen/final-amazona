@@ -90,10 +90,11 @@ productRouter.post(
   '/createProduct',
   fileUploader,
   expressAsyncHandler(async (req, res) => {
-    const files = req.filesURL;
+    const files = req.body.filesURL;
     let rating = 0;
     let numReviews = 0;
-    const image = files?.splice(0, 1)[0];
+    let imageURL = files[files.length-1]
+    const image =imageURL
     const images = files;
 
     const {
@@ -103,6 +104,7 @@ productRouter.post(
       category,
       subCategory,
       description,
+      additionalInfo,
       price,
       countInStock,
       productDiscountedPrice,
@@ -132,6 +134,7 @@ productRouter.post(
         category,
         subCategory,
         description,
+        additionalInfo,
         price,
         countInStock,
         productDiscountedPrice,
@@ -207,6 +210,7 @@ productRouter.post(
       numReviews: 0,
       productDiscountedPrice: 0,
       description: 'sample description',
+      additionalInfo:'sample information', 
       blackFridaySale: false,
     });
     const product = await newProduct.save();
@@ -230,6 +234,7 @@ productRouter.put(
       category,
       subCategory,
       description,
+      additionalInfo,
       price,
       countInStock,
       productDiscountedPrice,
@@ -277,6 +282,7 @@ productRouter.put(
           category,
           subCategory,
           description,
+          additionalInfo,
           price,
           countInStock,
           productDiscountedPrice,
